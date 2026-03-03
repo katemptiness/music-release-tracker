@@ -15,7 +15,7 @@ A local-first desktop app that tracks new album and EP releases from artists you
 ## Quick Start
 
 ```bash
-git clone https://github.com/katemptiness110/music-release-tracker.git
+git clone https://github.com/katemptiness/music-release-tracker.git
 cd music-release-tracker
 python run.py
 ```
