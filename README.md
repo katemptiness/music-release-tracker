@@ -69,6 +69,7 @@ This starts a long-polling bot that responds to these commands:
 | `/releases` | Show recent releases (last 20) |
 | `/unseen` | Show only new/unseen releases |
 | `/cover` | Browse and view album cover art |
+| `/today` | Show releases that come out today |
 
 Uses the same `telegram_config.json` from notification setup. Run in tmux/screen or as a systemd service to keep it running.
 

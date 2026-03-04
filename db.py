@@ -34,9 +34,17 @@ def init_db():
             release_date TEXT DEFAULT '',
             first_seen_at TEXT NOT NULL,
             notified INTEGER DEFAULT 0,
+            release_day_notified INTEGER DEFAULT 0,
             FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
         );
     """)
+    # Migration: add release_day_notified column for existing databases
+    try:
+        conn.execute("ALTER TABLE releases ADD COLUMN release_day_notified INTEGER DEFAULT 0")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
     conn.commit()
     conn.close()
 
@@ -149,6 +157,32 @@ def mark_release_seen(release_id: int):
     conn = get_db()
     try:
         conn.execute("UPDATE releases SET notified = 1 WHERE id = ?", (release_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_releases_due_today() -> list[dict]:
+    """Find releases with today's exact date (YYYY-MM-DD) not yet notified for release day."""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            """SELECT r.*, a.name as artist_name
+               FROM releases r
+               JOIN artists a ON r.artist_id = a.id
+               WHERE r.release_date = ? AND r.release_day_notified = 0""",
+            (today,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def mark_release_day_notified(release_id: int):
+    conn = get_db()
+    try:
+        conn.execute("UPDATE releases SET release_day_notified = 1 WHERE id = ?", (release_id,))
         conn.commit()
     finally:
         conn.close()

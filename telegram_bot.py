@@ -41,6 +41,7 @@ HELP_TEXT = (
     "/releases — Show recent releases (last 20)\n"
     "/unseen — Show only new/unseen releases\n"
     "/cover — Show album cover art\n"
+    "/today — Show releases that come out today\n"
     "/help — Show this message"
 )
 
@@ -236,6 +237,17 @@ async def cmd_cover(token: str, chat_id: str):
     await send_message(token, chat_id, "\U0001f3a8 Select a release to see its cover:", reply_markup=keyboard)
 
 
+async def cmd_today(token: str, chat_id: str):
+    from notify import check_release_day, format_release_day_message
+
+    releases = check_release_day()
+    if not releases:
+        await send_message(token, chat_id, "\u2705 No releases coming out today.")
+    else:
+        msg = format_release_day_message(releases)
+        await send_message(token, chat_id, msg)
+
+
 # --- Callback handlers ---
 
 async def handle_add_callback(token: str, chat_id: str, mbid: str):
@@ -384,6 +396,8 @@ async def handle_message(token: str, chat_id: str, message: dict):
         await cmd_unseen(token, chat_id)
     elif command == "/cover":
         await cmd_cover(token, chat_id)
+    elif command == "/today":
+        await cmd_today(token, chat_id)
     else:
         await send_message(token, chat_id, "Unknown command. Use /help to see available commands.")
 

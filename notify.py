@@ -114,6 +114,20 @@ def format_message(summary: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def check_release_day() -> list[dict]:
+    """Check for releases that come out today."""
+    db.init_db()
+    return db.get_releases_due_today()
+
+
+def format_release_day_message(releases: list[dict]) -> str:
+    lines = ["\U0001f4c5 <b>Out today — go listen!</b>\n"]
+    for r in releases:
+        lines.append(f"  \u2022 <b>{r['artist_name']}</b> \u2014 {r['title']} ({r['release_type']})")
+    lines.append(f"\n{len(releases)} release(s) out today.")
+    return "\n".join(lines)
+
+
 async def setup():
     """Interactive setup for Telegram bot."""
     print("=" * 50)
@@ -185,17 +199,31 @@ async def main():
 
     if not summary:
         print("No new releases found.")
-        return
-
-    message = format_message(summary)
-    print(message)
-    print()
-
-    success = await send_telegram_message(token, chat_id, message)
-    if success:
-        print("Telegram notification sent!")
     else:
-        print("Failed to send Telegram notification.")
+        message = format_message(summary)
+        print(message)
+        print()
+        success = await send_telegram_message(token, chat_id, message)
+        if success:
+            print("Telegram notification sent!")
+        else:
+            print("Failed to send Telegram notification.")
+
+    # Release-day notifications
+    due_today = check_release_day()
+    if due_today:
+        day_message = format_release_day_message(due_today)
+        print(day_message)
+        print()
+        success = await send_telegram_message(token, chat_id, day_message)
+        if success:
+            for r in due_today:
+                db.mark_release_day_notified(r["id"])
+            print("Release-day notification sent!")
+        else:
+            print("Failed to send release-day notification.")
+    else:
+        print("No releases due today.")
 
 
 if __name__ == "__main__":
