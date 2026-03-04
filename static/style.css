@@ -122,7 +122,7 @@ main {
     border-radius: 8px;
     border-left: 3px solid #333;
     display: flex;
-    justify-content: space-between;
+    gap: 0.85rem;
     align-items: center;
     transition: border-color 0.2s;
 }
@@ -132,8 +132,23 @@ main {
     background: #1e1e35;
 }
 
+.release-cover {
+    width: 56px;
+    height: 56px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #2a2a4a;
+}
+
+.release-cover.no-cover {
+    padding: 10px;
+    opacity: 0.3;
+}
+
 .release-info {
     flex: 1;
+    min-width: 0;
 }
 
 .release-title {

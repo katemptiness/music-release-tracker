@@ -42,6 +42,11 @@ async function loadReleases() {
     } else {
         releaseList.innerHTML = releases.map(r => `
             <div class="release-item ${r.notified === 0 ? 'unseen' : ''}" data-id="${r.id}">
+                <img class="release-cover"
+                     src="https://coverartarchive.org/release-group/${esc(r.mbid)}/front-250"
+                     alt=""
+                     loading="lazy"
+                     onerror="this.onerror=null;this.classList.add('no-cover');this.src='/static/icon.svg'">
                 <div class="release-info">
                     <div class="release-title">${esc(r.title)}</div>
                     <div class="release-artist">${esc(r.artist_name)}</div>
