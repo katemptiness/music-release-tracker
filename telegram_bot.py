@@ -28,6 +28,8 @@ import musicbrainz
 CONFIG_PATH = Path(__file__).parent / "telegram_config.json"
 TELEGRAM_API = "https://api.telegram.org/bot{token}"
 
+COVER_ART_URL = "https://coverartarchive.org/release-group/{mbid}/front-500"
+
 HELP_TEXT = (
     "\U0001f3b5 <b>Music Release Tracker Bot</b>\n"
     "\n"
@@ -38,6 +40,7 @@ HELP_TEXT = (
     "/check — Check all artists for new releases\n"
     "/releases — Show recent releases (last 20)\n"
     "/unseen — Show only new/unseen releases\n"
+    "/cover — Show album cover art\n"
     "/help — Show this message"
 )
 
@@ -68,6 +71,15 @@ async def send_message(token: str, chat_id: str, text: str, reply_markup: dict |
     if reply_markup:
         params["reply_markup"] = reply_markup
     return await api_request(token, "sendMessage", **params)
+
+
+async def send_photo(token: str, chat_id: str, photo_url: str, caption: str = "") -> dict:
+    """Send a photo by URL."""
+    params = {"chat_id": chat_id, "photo": photo_url}
+    if caption:
+        params["caption"] = caption
+        params["parse_mode"] = "HTML"
+    return await api_request(token, "sendPhoto", **params)
 
 
 async def answer_callback_query(token: str, callback_query_id: str, text: str = "") -> dict:
@@ -206,6 +218,24 @@ async def cmd_unseen(token: str, chat_id: str):
     await send_message(token, chat_id, "\n".join(lines))
 
 
+async def cmd_cover(token: str, chat_id: str):
+    releases = db.get_releases()
+    if not releases:
+        await send_message(token, chat_id, "No releases in the database yet.")
+        return
+
+    recent = releases[:10]
+    buttons = []
+    for r in recent:
+        label = f"{r['artist_name']} — {r['title']}"
+        if len(label) > 60:
+            label = label[:57] + "..."
+        buttons.append([{"text": label, "callback_data": f"cover:{r['mbid']}"}])
+
+    keyboard = {"inline_keyboard": buttons}
+    await send_message(token, chat_id, "\U0001f3a8 Select a release to see its cover:", reply_markup=keyboard)
+
+
 # --- Callback handlers ---
 
 async def handle_add_callback(token: str, chat_id: str, mbid: str):
@@ -294,6 +324,34 @@ async def handle_remove_callback(token: str, chat_id: str, artist_id_str: str):
     await send_message(token, chat_id, f"\U0001f5d1 Removed <b>{artist_name}</b> and all their releases.")
 
 
+async def handle_cover_callback(token: str, chat_id: str, release_mbid: str):
+    """Send album cover art for a release."""
+    # Find release info for the caption
+    releases = db.get_releases()
+    caption = ""
+    for r in releases:
+        if r["mbid"] == release_mbid:
+            caption = f"<b>{r['artist_name']}</b> — {r['title']}"
+            break
+
+    cover_url = COVER_ART_URL.format(mbid=release_mbid)
+
+    # Check if cover exists before sending
+    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        try:
+            head_resp = await client.head(cover_url)
+            if head_resp.status_code != 200:
+                await send_message(token, chat_id, "No cover art available for this release.")
+                return
+        except Exception:
+            await send_message(token, chat_id, "Failed to fetch cover art.")
+            return
+
+    result = await send_photo(token, chat_id, cover_url, caption)
+    if not result.get("ok"):
+        await send_message(token, chat_id, "No cover art available for this release.")
+
+
 # --- Main loop ---
 
 async def handle_message(token: str, chat_id: str, message: dict):
@@ -324,6 +382,8 @@ async def handle_message(token: str, chat_id: str, message: dict):
         await cmd_releases(token, chat_id)
     elif command == "/unseen":
         await cmd_unseen(token, chat_id)
+    elif command == "/cover":
+        await cmd_cover(token, chat_id)
     else:
         await send_message(token, chat_id, "Unknown command. Use /help to see available commands.")
 
@@ -341,6 +401,10 @@ async def handle_callback(token: str, chat_id: str, callback_query: dict):
         artist_id_str = data[3:]
         await answer_callback_query(token, callback_id, "Removing artist...")
         await handle_remove_callback(token, chat_id, artist_id_str)
+    elif data.startswith("cover:"):
+        release_mbid = data[6:]
+        await answer_callback_query(token, callback_id, "Fetching cover...")
+        await handle_cover_callback(token, chat_id, release_mbid)
     else:
         await answer_callback_query(token, callback_id, "Unknown action.")
 

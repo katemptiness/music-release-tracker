@@ -68,6 +68,7 @@ This starts a long-polling bot that responds to these commands:
 | `/check` | Check all artists for new releases |
 | `/releases` | Show recent releases (last 20) |
 | `/unseen` | Show only new/unseen releases |
+| `/cover` | Browse and view album cover art |
 
 Uses the same `telegram_config.json` from notification setup. Run in tmux/screen or as a systemd service to keep it running.
 
