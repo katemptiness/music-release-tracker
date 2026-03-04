@@ -49,6 +49,28 @@ python notify.py --setup
 
 This walks you through creating a Telegram bot via @BotFather, connecting it, and prints a cron line for weekly Friday checks. You can also run `python notify.py` manually at any time.
 
+## Interactive Telegram Bot (optional)
+
+Manage your entire music library from Telegram — no need to open the web UI:
+
+```bash
+python telegram_bot.py
+```
+
+This starts a long-polling bot that responds to these commands:
+
+| Command | Description |
+|---------|-------------|
+| `/start`, `/help` | Show available commands |
+| `/artists` | List tracked artists |
+| `/add <name>` | Search MusicBrainz, pick from inline buttons to add |
+| `/remove` | Pick a tracked artist to remove via inline buttons |
+| `/check` | Check all artists for new releases |
+| `/releases` | Show recent releases (last 20) |
+| `/unseen` | Show only new/unseen releases |
+
+Uses the same `telegram_config.json` from notification setup. Run in tmux/screen or as a systemd service to keep it running.
+
 ## Tech Stack
 
 - **Backend:** Python, FastAPI, SQLite
