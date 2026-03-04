@@ -10,6 +10,7 @@ A local-first desktop app that tracks new album and EP releases from artists you
 - **Release feed** — browse albums and EPs sorted by date, filter by artist, type, or new-only
 - **New release detection** — "Check Now" scans all tracked artists and highlights newly discovered releases with a badge
 - **Official releases only** — automatically filters out bootlegs, compilations, live albums, soundtracks, and remixes
+- **Telegram notifications** — weekly bot notifications for new releases via cron
 - **Click-to-run** — auto-installs dependencies on first launch, no manual setup needed
 
 ## Quick Start
@@ -37,6 +38,16 @@ python create-shortcut.py
 3. **Browse your feed** in the Feed tab — new releases are highlighted with a "NEW" badge; click to dismiss
 
 When you first add an artist, all their existing releases are imported as "already seen" so your feed isn't flooded. Only releases discovered in subsequent checks are marked as new.
+
+## Telegram Notifications (optional)
+
+Get a weekly Telegram message when new releases are found:
+
+```bash
+python notify.py --setup
+```
+
+This walks you through creating a Telegram bot via @BotFather, connecting it, and prints a cron line for weekly Friday checks. You can also run `python notify.py` manually at any time.
 
 ## Tech Stack
 
